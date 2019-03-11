@@ -9,11 +9,13 @@ import Header from '../../containers/Header';
 import './index.scss';
 import ListItems from '../ListItems';
 import Notification from '../../utils/notification';
+import Chat from '../../modules/Chat';
 // import Spinner from '../spinner';
 
+
 class HomePageList extends PureComponent {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       isSearching: false,
       contactedItems: [],
@@ -23,9 +25,11 @@ class HomePageList extends PureComponent {
     this._userInfo = JSON.parse(localStorage.getItem('userInfo'));
     this._filedStr = null;
     this._notification = new Notification();
+    this._chat = new Chat();
+    this._hasCalledMe = false;
   }
 
-  _notificationHandle(data) {
+  _notificationHandle = (data) => {
     const { name, message, avatar } = data;
     const chatType = data.to_group_id ? 'group_chat' : 'private_chat';
     const chatFromId = data.to_group_id ? data.to_group_id : data.user_id;
@@ -34,9 +38,10 @@ class HomePageList extends PureComponent {
       title,
       text: message,
       icon: avatar,
-      onClick() {
+      onClick: () => {
         this.props.history.push(`/${chatType}/${chatFromId}?name=${title}`);
         window.focus();
+        this._chat.clearUnreadHandle({ homePageList: this.props.homePageList, chatFromId });
       }
     });
   }
@@ -45,33 +50,56 @@ class HomePageList extends PureComponent {
     window.socket.removeAllListeners('getPrivateMsg');
     window.socket.removeAllListeners('getGroupMsg');
     window.socket.on('getPrivateMsg', (data) => {
-      const { userId } = this._userInfo;
+      const { user_id } = this._userInfo;
       const {
-        allChatContent, homePageList, updateHomePageList,
-        updateAllChatContent, relatedCurrentChat
+        allPrivateChats, homePageList, updateHomePageList,
+        addPrivateChatMessages, relatedCurrentChat
       } = this.props;
       // eslint-disable-next-line radix
       const chatId = parseInt(window.location.pathname.split('/').slice(-1)[0]);
       const isRelatedCurrentChat = (data.from_user === chatId || data.to_user === chatId);
+      const increaseUnread = isRelatedCurrentChat ? 0 : 1;
       relatedCurrentChat(isRelatedCurrentChat);
-      updateAllChatContent({ allChatContent, newChatContent: data, action: 'get' });
+      addPrivateChatMessages({
+        allPrivateChats,
+        message: data,
+        chatId: data.from_user,
+      });
       updateHomePageList({
-        data, homePageList, myUserId: userId, increaseUnread: !isRelatedCurrentChat
+        data, homePageList, myUserId: user_id, increaseUnread
       });
       this._notificationHandle(data);
       // TODO: mute notifications switch
     });
     window.socket.on('getGroupMsg', (data) => {
       const {
-        allChatContent, homePageList, updateHomePageList,
-        updateAllChatContent, relatedCurrentChat
+        allGroupChats, homePageList, updateHomePageList,
+        addGroupMessages, relatedCurrentChat, addGroupMessageAndInfo
       } = this.props;
       // eslint-disable-next-line radix
       const chatId = window.location.pathname.split('/').slice(-1)[0];
       const isRelatedCurrentChat = (data.to_group_id === chatId);
       relatedCurrentChat(isRelatedCurrentChat);
-      updateAllChatContent({ allChatContent, newChatContent: data });
-      updateHomePageList({ data, homePageList, increaseUnread: !isRelatedCurrentChat });
+      if (data.tip === 'joinGroup') {
+        addGroupMessageAndInfo({
+          allGroupChats,
+          groupId: data.to_group_id,
+          message: data,
+          member: data,
+        });
+      } else {
+        addGroupMessages({ allGroupChats, message: data, groupId: data.to_group_id });
+      }
+      if (data.message && !this._hasCalledMe) {
+        const regexp = new RegExp(`@${this._userInfo.name}\\s\\S*|@${this._userInfo.name}$`);
+        this._hasCalledMe = regexp.test(data.message);
+      }
+      updateHomePageList({
+        data,
+        homePageList,
+        increaseUnread: isRelatedCurrentChat ? 0 : 1,
+        showCallMeTip: this._hasCalledMe
+      });
       this._notificationHandle(data);
       // TODO: mute notifications switch
     });
@@ -107,8 +135,7 @@ class HomePageList extends PureComponent {
   }
 
   searchInDB({ searchUser }) {
-    window.socket.emit('fuzzyMatch', { field: this._filedStr, searchUser });
-    window.socket.on('fuzzyMatchRes', (data) => {
+    window.socket.emit('fuzzyMatch', { field: this._filedStr, searchUser }, (data) => {
       if (data.searchUser) {
         this.setState({ showSearchUser: false });
         data.fuzzyMatchResult.forEach((element) => {
@@ -121,26 +148,27 @@ class HomePageList extends PureComponent {
     });
   }
 
-  clickItemHandle = () => {
+  clickItemHandle = ({ homePageList, chatFromId }) => {
     if (this.state.isSearching) {
       this.setState({ isSearching: false });
     }
+    this._chat.clearUnreadHandle({ homePageList, chatFromId });
+    // clear [有人@我] [@Me]
+    this.props.showCallMeTip({ homePageList, chatFromId, showCallMeTip: false });
   }
 
   componentWillMount() {
-    const { userId } = this._userInfo;
-    window.socket.emit('initGroupChat', { userId });
     this.subscribeSocket();
   }
 
   render() {
-    const { homePageList, allChatContent } = this.props;
+    const { homePageList, allGroupChats } = this.props;
     homePageList.sort((a, b) => b.time - a.time);
     const {
       isSearching, contactedItems,
       showSearchUser, showSearchGroup
     } = this.state;
-    const contactedUsers = contactedItems.filter(e => e.user_id);
+    const contactedUsers = contactedItems.filter(e => (e.user_id && e.user_id !== this._userInfo.user_id));
     const contactedGroups = contactedItems.filter(e => e.to_group_id);
     return (
       <div className="home-page-list-wrapper">
@@ -154,28 +182,45 @@ class HomePageList extends PureComponent {
               { contactedUsers.length
                 ? (
                   <ListItems
+                    isSearching={isSearching}
                     dataList={contactedUsers}
-                    allChatContent={allChatContent}
-                    clickItem={this.clickItemHandle} />
+                    allGroupChats={allGroupChats}
+                    clickItem={chatFromId => this.clickItemHandle({ homePageList, chatFromId })} />
                 )
                 : <p className="search-none">暂无</p>}
-              { showSearchUser && <p className="click-to-search" onClick={() => this.searchInDB({ searchUser: true })}>网络查找相关的用户</p>}
+              { showSearchUser && (
+              <p
+                className="click-to-search"
+                onClick={() => this.searchInDB({ searchUser: true })}>
+                网络查找相关的用户
+              </p>
+              )}
               <p>您联系过的群组</p>
               { contactedGroups.length
                 ? (
                   <ListItems
+                    isSearching={isSearching}
                     dataList={contactedGroups}
-                    allChatContent={allChatContent}
-                    clickItem={this.clickItemHandle} />
+                    allGroupChats={allGroupChats}
+                    clickItem={chatFromId => this.clickItemHandle({ homePageList, chatFromId })} />
                 )
                 : <p className="search-none">暂无</p>}
-              { showSearchGroup && <p className="click-to-search" onClick={() => this.searchInDB({ searchUser: false })}>网络查找相关的群组</p>}
+              { showSearchGroup && (
+              <p
+                className="click-to-search"
+                onClick={() => this.searchInDB({ searchUser: false })}>
+                网络查找相关的群组
+              </p>
+              )}
             </div>
           )
             : (
               <ListItems
                 dataList={homePageList}
-                allChatContent={allChatContent} />
+                allGroupChats={allGroupChats}
+                showRobot
+                clickItem={chatFromId => this.clickItemHandle({ homePageList, chatFromId })}
+                 />
             )}
         </div>
       </div>
@@ -186,15 +231,26 @@ class HomePageList extends PureComponent {
 export default withRouter(HomePageList);
 
 HomePageList.propTypes = {
-  allChatContent: PropTypes.object,
+  allGroupChats: PropTypes.instanceOf(Map),
+  allPrivateChats: PropTypes.instanceOf(Map),
   homePageList: PropTypes.array,
-  updateHomePageList: PropTypes.func.isRequired,
-  updateAllChatContent: PropTypes.func.isRequired,
-  relatedCurrentChat: PropTypes.func.isRequired,
+  updateHomePageList: PropTypes.func,
+  addGroupMessages: PropTypes.func,
+  addGroupMessageAndInfo: PropTypes.func,
+  addPrivateChatMessages: PropTypes.func,
+  relatedCurrentChat: PropTypes.func,
+  showCallMeTip: PropTypes.func,
 };
 
 
 HomePageList.defaultProps = {
-  allChatContent: {},
+  allGroupChats: new Map(),
+  allPrivateChats: new Map(),
+  updateHomePageList() {},
+  addGroupMessages() {},
+  addGroupMessageAndInfo() {},
+  addPrivateChatMessages() {},
+  relatedCurrentChat() {},
   homePageList: [],
+  showCallMeTip() {},
 };

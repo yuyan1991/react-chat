@@ -3,7 +3,6 @@
 .input-msg {
     height: 50px;
     position: relative;
-    overflow:hidden;
     display: flex;
     width: 100%;
     background-color: $gray-tab;
@@ -54,6 +53,26 @@
             display: none;
         }
     }
+    .filterMembers {
+        list-style: none;
+        overflow-y: auto;
+        max-height: 120px;
+        width: 140px;
+        position: absolute;
+        bottom: 50px;
+        left: 90px;
+        z-index: 100;
+        background-color: $background-color;
+        padding: 4px 0;
+        color: #3c415e;
+        li:hover{
+            background-color: #fff;
+        }
+        li {
+            cursor: pointer;
+            padding: 4px;
+        }
+    }
     textarea {
         width: calc(100% - 148px);
         margin: 0 10px 0 2px;
@@ -73,5 +92,10 @@
         color: white;
         border-radius: 2px;
         font-family: 'Microsoft Yahei';
+        cursor: not-allowed;
+    }
+    p.btnActive {
+        background-color: $blue;
+        cursor: pointer !important;
     }
 }

@@ -5,6 +5,7 @@ const RELATED_CURRENT_CHAT = 'RELATED_CURRENT_CHAT';
 const UPDATE_ALL_CHAT_CONTENT = 'UPDATE_ALL_CHAT_CONTENT';
 const DELETE_CHAT_CONTENT = 'DELETE_CHAT_CONTENT';
 const UPDATE_USER_INFO = 'UPDATE_USER_INFO';
+const UPDATE_GROUP_MESSAGES = 'UPDATE_GROUP_MESSAGES';
 
 const setAllChatContentAction = (allChatContent = {}) => ({
   type: SET_ALL_CHAT_CONTENT,
@@ -31,6 +32,7 @@ const updateAllChatContentAction = ({
     mapKey = toGroupId || toPeople;
     chatType = toGroupId ? 'groupChat' : 'privateChat';
     if (allChatContentCopy[chatType].get(mapKey)) {
+      if (!allChatContentCopy[chatType].get(mapKey).messages) allChatContentCopy[chatType].get(mapKey).messages = [];
       allChatContentCopy[chatType].get(mapKey).messages.push(newChatContent);
     } else {
       allChatContentCopy[chatType].set(mapKey, { messages: [newChatContent] });

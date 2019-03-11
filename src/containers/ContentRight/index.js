@@ -10,13 +10,12 @@ export default function ContentLeft(props) {
   // eslint-disable-next-line react/destructuring-assignment
   const { params, url } = props.match;
   // eslint-disable-next-line radix
-  const chatId = parseInt(params.userId) || params.to_group_id;
+  const chatId = parseInt(params.user_id) || params.to_group_id;
   const isGroupChat = /\/group_chat\//.test(url);
   const isPrivateChat = /\/private_chat\//.test(url);
   const urlsOfShowingWelcomePage = ['/', '/setting'];
   const shouldShowWelcomePage = urlsOfShowingWelcomePage.includes(url);
   return (
-  // switch between privateChatPage not componentWillUnmount, switch other Page will componentWillUnmount
     <div className={shouldShowWelcomePage ? 'layout-right-mobile' : 'layout-right'}>
       {shouldShowWelcomePage && <WelcomePage />}
       {url === '/robot_chat' && <RobotPage />}

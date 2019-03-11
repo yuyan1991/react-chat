@@ -39,15 +39,13 @@ module.exports = async (ctx, next) => {
       },
       json: true
     };
-    console.log('options', options);
     const response = await request(options);
     const {
       avatar_url, html_url, bio, login, location, id, blog
     } = response;
-    console.log('response11', response);
     const payload = { id };
     const token = jwt.sign(payload, config.secret, {
-      expiresIn: Math.floor(Date.now() / 1000) + 24 * 60 * 60 // 一天
+      expiresIn: Math.floor(Date.now() / 1000) + 24 * 60 * 60 * 7 // 一周
     });
     const data = {
       avatar: avatar_url,
@@ -69,7 +67,7 @@ module.exports = async (ctx, next) => {
       const RowDataPacket = await userModel.findGithubUser(id);
       githubUser = JSON.parse(JSON.stringify(RowDataPacket));
     }
-    data.userId = githubUser[0].id;
+    data.user_id = githubUser[0].id;
     console.log('oauth 2333 res', data);
     ctx.body = data;
   } catch (error) {

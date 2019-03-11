@@ -7,7 +7,8 @@
   "scripts": {
     "init_sql": "node ./init/index.js",
     "start": "gulp start",
-    "dev": "node --inspect ../server"
+    "dev": "node --inspect ../server",
+    "pm2-pod": "pm2 start ecosystem.config.js --env production"
   },
   "engines": {
     "node": ">= 0.10.0"
@@ -17,6 +18,7 @@
     "jsonwebtoken": "^8.1.0",
     "koa": "^2.3.0",
     "koa-bodyparser": "^4.2.0",
+    "koa-compress": "^3.0.0",
     "koa-cors": "0.0.16",
     "koa-router": "^7.2.1",
     "koa-static": "^4.0.3",

@@ -2,7 +2,6 @@
 .home-page-list-wrapper {
     height: 100%;
     .home-page-list-content {
-        height: calc(100% - 60px);
         overflow-y: auto;
         .search-result {
             p {
@@ -21,64 +20,5 @@
                 text-align: center;
             }
         }
-        ul {
-            background-color: #fff;
-            list-style: none;
-            li {
-                list-style-type: none;
-                padding: 10px 0 10px 10px;
-                position: relative;
-                .title{
-                    color: #000;
-                }
-                a {
-                    display: -webkit-box;
-                    display: -ms-flexbox;
-                    display: flex;
-                    align-items: center;
-                    text-decoration : none;
-                    .UserAvatar {
-                        position: relative;
-                    }
-                }
-
-                .private-unread {
-                    background-color: red;
-                }
-                .group-unread {
-                    background-color: #98d1f2;
-                }
-                .content {
-                    display: inline-block;
-                    margin-left: 10px;
-                    max-width: 80%;
-                    .title {
-                        font-size: 18px;
-                        padding-bottom: 4px;
-                        span {
-                            font-size: 14px;
-                            color: $m-title;
-                            padding: 0 9px;
-                            position: absolute;
-                            top: 14px;
-                            right: 8px;
-                        }
-                    }
-                    .message {
-                        color: $m-title;
-                        font-size: 12px;
-                        max-height: 42px;
-                        overflow: hidden;
-                        position: relative;
-                    }
-                    .message :after {
-                        content: "...";
-                        position: absolute;
-                        bottom: 0;
-                        right: 0;
-                    }
-                }
-            }
-        }   
     }
 }

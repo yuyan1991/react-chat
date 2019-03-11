@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Modal from '../Modal';
+import notification from '../Notification';
 import './style.scss';
 
 
@@ -17,6 +18,15 @@ export default class Header extends Component {
   }
 
   confirm = () => {
+    const { groupName, groupNotice } = this.state;
+    if (!groupName || !groupNotice) {
+      notification('你有空行没填哦', 'error');
+      return;
+    }
+    if (groupName === 'ghChat') {
+      notification('这个群名仅供项目本身使用啦，请用别的群名', 'error');
+      return;
+    }
     this.setState({
       modalVisible: false
     });
@@ -25,31 +35,33 @@ export default class Header extends Component {
 
   createGroup = () => {
     const { groupName, groupNotice } = this.state;
-    const { name, userId } = this._userInfo;
+    const { name, user_id } = this._userInfo;
     const data = {
       name: groupName,
       group_notice: groupNotice,
       creator: name,
-      creator_id: userId,
+      creator_id: user_id,
       create_time: Date.parse(new Date()) / 1000
     };
-    // this.props.history.push('/login');
-    window.socket.on('createGroupRes', (data) => {
+    window.socket.emit('createGroup', data, (res) => {
       const {
-        updateAllChatContent, updateHomePageList, homePageList, allChatContent,
+        addGroupMessageAndInfo, updateHomePageList, homePageList, allGroupChats,
       } = this.props;
-      const groupInfo = Object.assign({}, data);
-      data.message = `${data.creator}: 创建群成功！`;
-      data.time = Date.parse(new Date()) / 1000;
-      updateHomePageList({ data, homePageList });
-      const newChatContents = {
-        messages: [{ ...data, name }],
-        groupInfo
-      };
-      updateAllChatContent({ allChatContent, newChatContents });
-      this.props.history.push(`/group_chat/${data.to_group_id}`);
+      const members = [{
+        user_id,
+        name,
+        status: 1
+      }];
+      const groupInfo = Object.assign({ members }, res);
+      res.message = `${res.creator}: 创建群成功！`;
+      res.time = res.create_time;
+      res.from_user = res.creator_id;
+      updateHomePageList({ data: res, homePageList });
+      addGroupMessageAndInfo({
+        allGroupChats, message: { ...res, name }, groupId: res.to_group_id, groupInfo
+      });
+      this.props.history.push(`/group_chat/${res.to_group_id}?name=${res.name}`);
     });
-    window.socket.emit('createGroup', data);
   }
 
   handleChange = (event) => {
@@ -118,8 +130,8 @@ export default class Header extends Component {
                 value={groupName}
                 onChange={this.handleChange}
                 type="text"
-                placeholder="不超过10个字哦"
-                maxLength="10" />
+                placeholder="不超过12个字哦"
+                maxLength="12" />
             </p>
             <p>
               <span>群公告:</span>
@@ -141,19 +153,19 @@ export default class Header extends Component {
 
 Header.propTypes = {
   updateHomePageList: PropTypes.func,
-  updateAllChatContent: PropTypes.func,
   homePageList: PropTypes.array,
-  allChatContent: PropTypes.object,
+  allGroupChats: PropTypes.object,
   searchFieldChange: PropTypes.func,
   isSearching: PropTypes.bool,
+  addGroupMessageAndInfo: PropTypes.func,
 };
 
 
 Header.defaultProps = {
   updateHomePageList: undefined,
-  updateAllChatContent: undefined,
   homePageList: [],
-  allChatContent: {},
+  allGroupChats: new Map(),
   searchFieldChange: undefined,
-  isSearching: false
+  isSearching: false,
+  addGroupMessageAndInfo() {}
 };

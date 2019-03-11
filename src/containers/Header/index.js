@@ -3,17 +3,19 @@ import {
   withRouter
 } from 'react-router-dom';
 import { updateHomePageListAction } from '../HomePageList/homePageListAction';
-import { updateAllChatContentAction } from '../../redux/actions/chatContentAction';
+import {
+  addGroupMessageAndInfoAction,
+} from '../GroupChatPage/groupChatAction';
 import Header from '../../components/Header';
 
 const mapStateToProps = state => ({
-  allChatContent: state.allChatContentState,
+  allGroupChats: state.allGroupChatsState,
   homePageList: state.homePageListState,
 });
 
 const mapDispatchToProps = dispatch => ({
-  updateAllChatContent(arg = {}) {
-    dispatch(updateAllChatContentAction({ ...arg }));
+  addGroupMessageAndInfo(arg = {}) {
+    dispatch(addGroupMessageAndInfoAction({ ...arg }));
   },
   updateHomePageList(arg = {}) {
     dispatch(updateHomePageListAction({ ...arg }));

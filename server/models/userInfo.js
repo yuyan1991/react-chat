@@ -51,9 +51,9 @@ const findDataByName = (name) => {
 // };
 
 // 更新登录状态
-const updateUserStatus = (userId, status) => {
+const updateUserStatus = (user_id, status) => {
   const _sql = 'UPDATE user_info SET status = ? WHERE id= ? limit 1;';
-  return query(_sql, [status, userId]);
+  return query(_sql, [status, user_id]);
 };
 
 // 修改我的信息
@@ -63,14 +63,14 @@ const updateUserStatus = (userId, status) => {
 // };
 
 // 通过用户id查找用户信息 user_info 包括密码
-// const findDataByUserid = (userid) => {
+// const findDataByUserid = (user_id) => {
 //   const _sql = 'SELECT * FROM user_info WHERE id= ? ';
 //   return query(_sql, [userid]);
 // };
 
 // 通过用户id查找用户信息 user_info 包括用户名，性别，头像，最后登录时间，状态等，不包括密码
 const getUserInfo = (user_id) => {
-  const _sql = 'SELECT id AS user_id, name, avatar, location, website, github, intro, status  FROM user_info   WHERE  user_info.id =? ';
+  const _sql = 'SELECT id AS user_id, name, avatar, location, website, github, github_id, intro, status  FROM user_info   WHERE  user_info.id =? ';
   return query(_sql, [user_id]);
 };
 

@@ -4,34 +4,30 @@ import {
 } from 'react-router-dom';
 import {
   updateHomePageListAction,
-  clearUnreadAction
 } from '../HomePageList/homePageListAction';
 import {
-  updateAllChatContentAction,
-  updateUserInfoAction
-} from '../../redux/actions/chatContentAction';
+  addPrivateChatMessagesAction,
+  addPrivateChatInfoAction,
+} from './privateChatAction';
 import PrivateChat from '../../components/PrivateChat';
 import '../../assets/chat.scss';
 
 const mapStateToProps = state => ({
-  allChatContent: state.allChatContentState,
+  allPrivateChats: state.allPrivateChatsState,
   homePageList: state.homePageListState,
   relatedCurrentChat: state.relatedCurrentChat
 });
 
 const mapDispatchToProps = dispatch => ({
-  updateAllChatContent(arg = {}) {
-    dispatch(updateAllChatContentAction({ ...arg }));
+  addPrivateChatMessages(arg = {}) {
+    dispatch(addPrivateChatMessagesAction({ ...arg }));
+  },
+  addPrivateChatInfo(arg = {}) {
+    dispatch(addPrivateChatInfoAction({ ...arg }));
   },
   updateHomePageList(arg = {}) {
     dispatch(updateHomePageListAction({ ...arg }));
   },
-  updateUserInfo(arg = {}) {
-    dispatch(updateUserInfoAction({ ...arg }));
-  },
-  clearUnread(arg = {}) {
-    dispatch(clearUnreadAction({ ...arg }));
-  }
 });
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(PrivateChat));

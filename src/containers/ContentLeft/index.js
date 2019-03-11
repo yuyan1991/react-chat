@@ -11,39 +11,71 @@ import SettingPage from '../SettingPage';
 import {
   setHomePageListAction,
 } from '../HomePageList/homePageListAction';
-import {
-  setAllChatContentAction,
-} from '../../redux/actions/chatContentAction';
-import { initAppAction } from '../../utils/InitApp/initAppAction';
+import { setAllGroupChatsAction } from '../GroupChatPage/groupChatAction';
+import { setAllPrivateChatsAction } from '../PrivateChatPage/privateChatAction';
+import { initAppAction } from '../../redux/actions/initAppAction';
 import notification from '../../components/Notification';
-import secret from '../../../secret';
 
 class ContentLeft extends Component {
   constructor(props) {
     super(props);
-    this.WEBSITE_ADDRESS = process.env.NODE_ENV === 'production' ? secret.proIp : 'http://localhost:3000';
+    this.WEBSITE_ADDRESS = process.env.NODE_ENV === 'production' ? 'https://im.aermin.top' : 'http://localhost:3000';
+    this._userInfo = JSON.parse(localStorage.getItem('userInfo'));
   }
 
   componentWillMount() {
-    if (!this.props.initAppState) {
+    if (!this.props.initializedApp) {
       this.init();
     }
   }
 
+  _initSocket = () => {
+    const { token, user_id } = this._userInfo;
+    window.socket = io(`${this.WEBSITE_ADDRESS}?token=${token}`);
+    window.socket.emit('initSocket', user_id, (data) => {
+      console.log(`${user_id} connect socket success.`, data, 'time=>', new Date().toLocaleString());
+    });
+    window.socket.emit('initGroupChat', user_id, (res) => {
+      console.log(res, 'time=>', new Date().toLocaleString());
+    });
+  };
+
+  _initMessage = () => {
+    const { user_id } = this._userInfo;
+    window.socket.emit('initMessage', user_id, (allMessage) => {
+      const privateChat = new Map(allMessage.privateChat);
+      const groupChat = new Map(allMessage.groupChat);
+      this.props.setHomePageList(allMessage.homePageList);
+      this.props.setAllPrivateChats({ data: privateChat });
+      this.props.setAllGroupChats({ data: groupChat });
+      this.props.initApp(true);
+    });
+  }
+
   async init() {
-    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-    if (userInfo) {
-      window.socket = io(`${this.WEBSITE_ADDRESS}?token=${userInfo.token}`);
+    // force logged in user to log in again to update userInfo in localStorage because I change userId to user_id global
+    // TODO: remove this after one week
+    if (this._userInfo.userId) {
+      localStorage.removeItem('userInfo');
+      this.props.history.push('/login');
+    }
+    if (this._userInfo) {
+      this._initSocket();
+      this._initMessage();
       window.socket.on('error', (errorMessage) => {
         notification(errorMessage, 'error');
       });
-      window.socket.emit('login', userInfo.userId);
-      window.socket.emit('initMessage', userInfo.userId, (allMessage) => {
-        const privateChat = new Map(allMessage.privateChat);
-        const groupChat = new Map(allMessage.groupChat);
-        this.props.setHomePageList(allMessage.homePageList);
-        this.props.setAllChatContent({ privateChat, groupChat });
-        this.props.initApp(true);
+      window.socket.on('reconnect', (attemptNumber) => {
+        console.log('reconnect successfully. attemptNumber =>', attemptNumber, 'time=>', new Date().toLocaleString());
+      });
+      window.socket.on('disconnect', (reason) => {
+        console.log('disconnect in client, disconnect reason =>', reason, 'time=>', new Date().toLocaleString());
+        this._initSocket();
+        // TODO: 重现拿完数据更新未读数目
+        this._initMessage();
+      });
+      window.socket.on('reconnect_error', (error) => {
+        console.log('reconnect_error. error =>', error, 'time=>', new Date().toLocaleString());
       });
     }
   }
@@ -65,15 +97,19 @@ class ContentLeft extends Component {
 }
 
 const mapStateToProps = state => ({
-  initAppState: state.initAppState,
+  initializedApp: state.initAppState,
+  homePageList: state.homePageListState,
 });
 
 const mapDispatchToProps = dispatch => ({
   setHomePageList(arg) {
     dispatch(setHomePageListAction(arg));
   },
-  setAllChatContent(arg = {}) {
-    dispatch(setAllChatContentAction({ ...arg }));
+  setAllGroupChats(arg = {}) {
+    dispatch(setAllGroupChatsAction({ ...arg }));
+  },
+  setAllPrivateChats(arg = {}) {
+    dispatch(setAllPrivateChatsAction({ ...arg }));
   },
   initApp(arg) {
     dispatch(initAppAction(arg));
@@ -85,12 +121,13 @@ export default withRouter(connect(mapStateToProps, mapDispatchToProps)(ContentLe
 
 ContentLeft.propTypes = {
   setHomePageList: PropTypes.func.isRequired,
-  setAllChatContent: PropTypes.func.isRequired,
+  setAllGroupChats: PropTypes.func.isRequired,
+  setAllPrivateChats: PropTypes.func.isRequired,
   initApp: PropTypes.func.isRequired,
-  initAppState: PropTypes.bool,
+  initializedApp: PropTypes.bool,
 };
 
 
 ContentLeft.defaultProps = {
-  initAppState: false
+  initializedApp: false
 };

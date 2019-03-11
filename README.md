@@ -1,67 +1,175 @@
-# react-chat
-
-![image](https://user-images.githubusercontent.com/24861316/51810041-5bd1b700-22e0-11e9-9456-aae8548ca492.png)
-![image](https://user-images.githubusercontent.com/24861316/51809979-ebc33100-22df-11e9-94be-c7554004cdfe.png)
-![image](https://user-images.githubusercontent.com/24861316/52684052-cbea6900-2f7f-11e9-88b4-fae0bfafdbeb.png)
-![image](https://user-images.githubusercontent.com/24861316/51809992-fd0c3d80-22df-11e9-89f1-ac9c7133d735.png)
+![ghChat](https://user-images.githubusercontent.com/24861316/54087066-55783580-438a-11e9-9a5d-14288e84a3f9.png)
 
 
-目前进度
+English | [简体中文](./README-zh_CN.md)
 
-- 账户
+## ghChat(react version)
 
-  - [x] 登录
-  - [x] 注册
-  - [x] 支持github登录 
-  - [x] 退出登录
+I hope that this project can be a chat tool for GitHub. So I will try to make it do some integration with GitHub. At present，it just support logging in with GitHub authorization and look GitHub user public information in ghChat. If you have anything idea about integration, welcome to create issues about feature suggestion, bug feedback or send pull requests.
+
+### Address
+
+[GitHub address](https://github.com/aermin/react-chat)
+
+[Project online address，support log in with GitHub authorization](https://im.aermin.top)
+
+Welcome to join this project's group which named 'ghChat'. You click the inviting button from the robot. And you can search to join it as well.
+
+![image](https://user-images.githubusercontent.com/24861316/53296199-6337a200-3845-11e9-8435-3f5480cca602.png)
+
+
+### What technology do ghChat use?
+
+Front-End : React+Redux+React-router+axios+scss；
+Back-end: node(koa2)+mysql+JWT(Json web token); 
+use socket.io to send messages with each other. 
+And get other technology please follow the package.json file.
+
+### Features && Progress
+
+- Account system
+
+  - [x] Log in
+  - [x] Resister
+  - [x] Log in with github authorization
+  - [x] Log out
 
 - UI
-    - [x] 弹窗，提示等基础组件
-    - [x] 响应式布局。以前的实现只是移动端的布局。
+    - [x] Basic UI components: modal，nitification ...
+    - [x] Responsive layout.
 
-- 私聊
+- Private chat
 
-  - [x] 私聊（外加重要的重构）：始化时请求聊天列表所有聊天对象的聊天记录（后期将请求聊天记录的限制为20条聊天内容，避免初始化时间过长），接着根据点击列表导致chatId(取自url params)的改变，重新渲染新的聊天内容。以前的实现方式是点击进入每个聊天页面都会发1至多次请求然后渲染页面，性能较差。。。终于想出自己较为满意的方案，开森~ 不过现在看以前vue-chat的代码真是烂成💩了，搞完react-chat有空了回去重构一波
-  - [x] 加好友: 搜索到该用户并发送信息后即记录为好友(关系存DB)，会展示在双方的聊天列表
-  - [x] 好友资料展示
+  - [x] Chat with my contacts
+  - [x] Add contact
+  - [x] Contact infomation card
+  - [ ] Delete contact
 
-- 群聊
+- Group chat
 
-  - [x] 群聊 && 重构： 本来是根据消息列表上的群和好友去遍历发HTTP请求拿数据，现在直接在后端整合好一次性用websocket发过来，减少请求次数且websocket在此情况性能更优一些； 完成群聊功能
-  - [x] 建群
-  - [x] 加群：搜索到该群并点击，会看到当前时间前的聊天记录，点加入按钮后即成功加入群(关系存DB)，开始受到群消息的广播，并且群会展示在聊天列表
-  - [x] 群资料展示
-  - [x] 退群：退群后聊天列表不再展示该群(DB中删除该关系)
-  - [ ] 编辑群资料
+  - [x] Chat together in a group
+  - [x] Create a group
+  - [x] Join a group
+  - [x] Group information view, include group members, group notice, group name...
+  - [x] Quit the group
+  - [ ] Editor group information
 
-- 查询
+- Search
 
-  - [x] 用户搜索&&群搜索： 支持前端模糊搜索和后端模糊搜索
-  - [ ] 支持聊天记录查询
+  - [x] Search users and groups in local or online obscurely
 
-- 丰富聊天方式
+- Rich chat mode
 
-  - [x] 聊天页表： 实时按时间降序展示联系过的人和加入的群
-  - [x] 发图
-  - [x] 发表情
-  - [x] 发文件
-  - [x] 下载文件
-  - [ ] 支持Markdown
-  - [ ] 支持Quote
+  - [x] Chat list sort by time everytime
+  - [x] Send photo
+  - [x] Send emoji
+  - [x] Send file
+  - [x] Download file
+  - [x] Press enter key to send message
+  - [x] @somebody
+  - [x] View photo
+  - [ ] Search expression online
+  - [ ] Markdown
+  - [ ] Quote
 
-- 新消息提示
+- Message notification
 
-  - [x] 浏览器系统提示
-  - [x] 列表未读数字提示
+  - [x] Browser notification
+  - [x] Show chat messages unread number in the chat list
 
-- 不断的重构和性能优化
-  - [ ] 聊天内容懒加载，每次先获取20条数据
-  - [ ] 组件粒度更细
-  - [ ] sql优化
+- Performance
 
-- 其他
+  - [x] Open gzip to compress static resource
+  - [x] Lazy load chat messages. Fetch twenty messages by one time in every chat.
+  - [ ] SQL optimization
 
-  - [x] 机器人智能聊天回复
-  - [ ] 支持PWA
-  - [ ] 把后端接口封装成sdk
+- Others
+
+  - [x] Robot smart reply (just support Chinese)
+  - [x] Add SSL for website
+  - [ ] PWA
+  - [ ] Back end rewrite with TS，encapsulated as sdk.
   - [ ] CI/CD
+
+### Development
+
+1. clone project code
+```
+git clone https://github.com/aermin/react-chat.git
+```
+
+
+2.  create an empty file which names 'secret.js' in the root directory of this project.
+
+But if you want to log in with GitHub authorization, use third part cdn to send files in chat, or separate configuration for DB, jwt secret, you should add content as follows in secret.js. So without this authorization, you just can't use features about send files and log in with GitHub.
+
+```
+module.exports = {
+  client_secret: '', // client_secret of github authorization:  github-> settings ->  Developer settings to get 
+  db: {
+    host: '', 
+    port: ,
+    database: '',
+    user: '',
+    password: '',
+  },
+  secretValue: '', // secret of json web token
+  qiniu: { // qiniu cdn configuration
+    accessKey: '',
+    secretKey: '',
+    bucket: ''
+  }
+};
+```
+
+3. download npm module for front end
+
+```
+cd react-chat
+```
+
+```
+npm i
+```
+
+4. download npm module for back end
+```
+cd cd react-chat/server 
+```
+
+```
+npm i
+```
+
+5. init DB
+```
+// You should create a MySQL DB which name ghcaht in local
+DB configuration follows 'react-chat/server/config.js'
+
+npm run init_sql
+```
+
+6. run front end and back end code
+```
+npm run start
+```
+
+```
+cd ..  
+```
+
+```
+npm run start
+```
+
+### Demo with photo：
+
+![image](https://user-images.githubusercontent.com/24861316/53351929-e1d33300-395c-11e9-84a9-0a9fd793b5a1.png)
+
+![image](https://user-images.githubusercontent.com/24861316/53295822-b3f7cc80-383e-11e9-83b4-82a12bd4a24f.png)
+
+![image](https://user-images.githubusercontent.com/24861316/53296063-eb687800-3842-11e9-9da3-ab1c312c673d.png)
+
+![image](https://user-images.githubusercontent.com/24861316/53296160-afcead80-3844-11e9-9827-4b03303fcd3d.png)
+
+![image](https://user-images.githubusercontent.com/24861316/53351432-4346d200-395c-11e9-936e-e08d887f1355.png)

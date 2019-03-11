@@ -4,6 +4,8 @@ import ChatHeader from '../ChatHeader';
 import InputArea from '../InputArea';
 import ChatContentList from '../ChatContentList';
 import PersonalInfo from '../PersonalInfo';
+import notification from '../Notification';
+import Chat from '../../modules/Chat';
 
 export default class PrivateChat extends Component {
   constructor() {
@@ -14,39 +16,50 @@ export default class PrivateChat extends Component {
     this.state = {
       showPersonalInfo: false
     };
+    this._chat = new Chat();
   }
 
   sendMessage = (inputMsg = '', attachments = []) => {
     if (inputMsg.trim() === '' && attachments.length === 0) return;
-    const { userId, avatar, name } = this._userInfo;
     const {
-      allChatContent, homePageList,
-      updateHomePageList, updateAllChatContent,
+      user_id, avatar, name, github_id
+    } = this._userInfo;
+    const {
+      allPrivateChats, homePageList,
+      updateHomePageList, addPrivateChatMessages,
     } = this.props;
     const data = {
-      from_user: userId, // 自己的id
+      from_user: user_id, // 自己的id
       to_user: this.friendId, // 对方id
       avatar, // 自己的头像
       name,
+      github_id,
       message: inputMsg === '' ? attachments[0].type : `${name}: ${inputMsg}`, // 消息内容
       attachments, // 附件
       time: Date.parse(new Date()) / 1000 // 时间
     };
     this._sendByMe = true;
     window.socket.emit('sendPrivateMsg', data);
-    updateAllChatContent({ allChatContent, newChatContent: data, action: 'send' });
+    this._chat.scrollToBottom();
+    addPrivateChatMessages({
+      allPrivateChats, message: data, chatId: this.friendId
+    });
     const dataForHomePage = { ...data, name: location.search.split('=')[1] };
-    updateHomePageList({ data: dataForHomePage, homePageList, myUserId: userId });
-    console.log('sent message', data);
+    updateHomePageList({ data: dataForHomePage, homePageList, myUserId: user_id });
   }
 
   addAsTheContact =() => {
     const {
-      allChatContent, homePageList,
-      updateHomePageList, updateUserInfo,
+      allPrivateChats, homePageList,
+      updateHomePageList, addPrivateChatInfo,
+      chatId,
     } = this.props;
-    window.socket.emit('addAsTheContact', { user_id: this._userInfo.userId, from_user: this.friendId }, (data) => {
-      updateUserInfo({ allChatContent, userInfo: data });
+    if (chatId === this._userInfo.user_id) {
+      notification('不能添加自己为联系人哦', 'error');
+      return;
+    }
+    window.socket.emit('addAsTheContact', { user_id: this._userInfo.user_id, from_user: this.friendId }, (data) => {
+      addPrivateChatInfo({ allPrivateChats, chatId: this.friendId, userInfo: data });
       const dataInHomePageList = {
         ...data,
         to_user: data.user_id,
@@ -57,59 +70,29 @@ export default class PrivateChat extends Component {
     });
   }
 
-  scrollToBottom(time = 0) {
-    const ulDom = document.getElementsByClassName('chat-content-list')[0];
-    if (ulDom) {
-      setTimeout(() => {
-        ulDom.scrollTop = ulDom.scrollHeight + 10000;
-      }, time);
-    }
-  }
-
   _showPersonalInfo(value) {
     this.setState({ showPersonalInfo: value });
   }
 
-  clearUnreadHandle() {
-    const { homePageList, clearUnread, chatId } = this.props;
-    clearUnread({ homePageList, chatFromId: chatId });
-  }
-
-  componentDidMount() {
-    this.clearUnreadHandle();
-    this.scrollToBottom();
-  }
-
-  componentWillReceiveProps(nextProps) {
-    console.log('componentWillReceiveProps in privateChat', nextProps, this.props);
-  }
-
   shouldComponentUpdate(nextProps, nextState) {
     const { relatedCurrentChat, chatId } = nextProps;
-    console.log('shouldComponentUpdate', relatedCurrentChat, chatId, this.props.chatId, this._sendByMe);
+    // console.log('shouldComponentUpdate', relatedCurrentChat, chatId, this.props.chatId, this._sendByMe);
     if (relatedCurrentChat || chatId !== this.props.chatId || this._sendByMe) {
       this._sendByMe = false;
       return true;
     }
+
+    const { showPersonalInfo } = nextState;
+    if (showPersonalInfo !== this.state.showPersonalInfo) return true;
+
     return false;
   }
 
-  componentDidUpdate() {
-    console.log('componentDidUpdate in privateChat');
-    this.scrollToBottom();
-  }
-
-  componentWillUnmount() {
-    console.log('componentWillUnmount in privateChat');
-  }
-
   render() {
-    const { chatId, allChatContent, location } = this.props;
+    const { chatId, allPrivateChats, location } = this.props;
     const { showPersonalInfo } = this.state;
-    console.log('allChatContent.privateChat', allChatContent.privateChat, chatId);
-    if (!allChatContent.privateChat) return null;
-    const chatItem = allChatContent.privateChat.get(chatId);
-    console.log('chatItem23333', chatItem);
+    if (!allPrivateChats && !allPrivateChats.size) return null;
+    const chatItem = allPrivateChats.get(chatId);
     const messages = chatItem ? chatItem.messages : [];
     const userInfo = chatItem ? chatItem.userInfo : {};
     return (
@@ -118,7 +101,12 @@ export default class PrivateChat extends Component {
           showPersonalInfo={() => this._showPersonalInfo(true)}
           title={location.search.split('=')[1]}
           chatType="private" />
-        <ChatContentList ChatContent={messages} chatId={chatId} clickAvatar={() => this._showPersonalInfo(true)} />
+        <ChatContentList
+          chats={allPrivateChats}
+          ChatContent={messages}
+          chatId={chatId}
+          chatType="privateChat"
+          clickAvatar={() => this._showPersonalInfo(true)} />
         <PersonalInfo
           userInfo={userInfo}
           hide={() => this._showPersonalInfo(false)}
@@ -143,21 +131,20 @@ export default class PrivateChat extends Component {
 }
 
 PrivateChat.propTypes = {
-  allChatContent: PropTypes.object,
+  allPrivateChats: PropTypes.instanceOf(Map),
   homePageList: PropTypes.array,
   updateHomePageList: PropTypes.func,
-  updateAllChatContent: PropTypes.func,
-  updateUserInfo: PropTypes.func,
+  addPrivateChatMessages: PropTypes.func,
+  addPrivateChatInfo: PropTypes.func,
   chatId: PropTypes.number,
-  clearUnread: PropTypes.func.isRequired,
 };
 
 
 PrivateChat.defaultProps = {
-  allChatContent: {},
+  allPrivateChats: new Map(),
   homePageList: [],
   updateHomePageList: undefined,
-  updateAllChatContent: undefined,
-  updateUserInfo: undefined,
+  addPrivateChatMessages: undefined,
+  addPrivateChatInfo: undefined,
   chatId: undefined,
 };

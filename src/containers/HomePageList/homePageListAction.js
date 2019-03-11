@@ -4,12 +4,14 @@ const UPDATE_HOME_PAGE_LIST = 'UPDATE_HOME_PAGE_LIST';
 const CLEAR_UNREAD = 'CLEAR_UNREAD';
 const DELETE_CHAT_FROM_LIST = 'DELETE_CHAT_FROM_LIST';
 const SET_HOME_PAGE_LIST = 'SET_HOME_PAGE_LIST';
+const SHOW_CALL_ME_TIP = 'SHOW_CALL_ME_TIP';
 
 // TODO: 重构和代码注释
 const updateHomePageListAction = ({
-  homePageList, data, myUserId, increaseUnread = false
+  homePageList, data, myUserId, increaseUnread = 0, showCallMeTip = false
 }) => {
   const homePageListCopy = [...List(homePageList)];
+  data.showCallMeTip = showCallMeTip;
   let chatFromId;
   if (data && data.to_user) {
     chatFromId = data.from_user === myUserId ? data.to_user : data.from_user;
@@ -23,17 +25,35 @@ const updateHomePageListAction = ({
     for (let i = 0; i < length; i++) {
       const { user_id, to_group_id, unread = 0 } = homePageListCopy[i];
       if (user_id === chatFromId || to_group_id === chatFromId) {
-        const updatedUnread = increaseUnread ? unread + 1 : unread;
-        homePageListCopy[i] = Object.assign(homePageListCopy[i], { message: data.message, time: data.time, unread: updatedUnread });
+        const updatedUnread = unread + increaseUnread;
+        homePageListCopy[i] = Object.assign(homePageListCopy[i], {
+          message: data.message, time: data.time, unread: updatedUnread, showCallMeTip
+        });
         break;
       }
     }
   } else {
-    data.unread = increaseUnread ? 1 : 0;
+    data.unread = increaseUnread;
     homePageListCopy.push(data);
   }
   return {
     type: UPDATE_HOME_PAGE_LIST,
+    data: homePageListCopy
+  };
+};
+
+const showCallMeTipAction = ({ homePageList, showCallMeTip, chatFromId }) => {
+  const homePageListCopy = [...List(homePageList)];
+  const length = homePageListCopy.length;
+  for (let i = 0; i < length; i++) {
+    const { to_group_id } = homePageListCopy[i];
+    if (to_group_id === chatFromId) {
+      homePageListCopy[i].showCallMeTip = showCallMeTip;
+      break;
+    }
+  }
+  return {
+    type: SHOW_CALL_ME_TIP,
     data: homePageListCopy
   };
 };
@@ -47,8 +67,7 @@ const deleteHomePageListAction = ({
     const { to_group_id, user_id } = homePageListCopy[i];
     const id = to_group_id || user_id;
     if (chatId === id) {
-      const deletedItem = homePageListCopy.splice(i, 1);
-      console.log('deletedItem', deletedItem);
+      homePageListCopy.splice(i, 1);
       break;
     }
   }
@@ -63,7 +82,8 @@ const clearUnreadAction = ({ chatFromId, homePageList }) => {
   const length = homePageListCopy.length;
   for (let i = 0; i < length; i++) {
     const { user_id, to_group_id } = homePageListCopy[i];
-    if (user_id === chatFromId || to_group_id === chatFromId) {
+    if ((user_id && user_id.toString()) === (chatFromId && chatFromId.toString())
+        || to_group_id === chatFromId) {
       homePageListCopy[i].unread = 0;
       break;
     }
@@ -84,8 +104,10 @@ export {
   CLEAR_UNREAD,
   DELETE_CHAT_FROM_LIST,
   SET_HOME_PAGE_LIST,
+  SHOW_CALL_ME_TIP,
   updateHomePageListAction,
   clearUnreadAction,
   deleteHomePageListAction,
   setHomePageListAction,
+  showCallMeTipAction
 };

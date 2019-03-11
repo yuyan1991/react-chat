@@ -10,8 +10,8 @@ import SignInSignUp from '../../components/SignInSignUp';
 import './index.scss';
 
 class LogIn extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
 
     this.state = {
       name: '',
@@ -24,26 +24,29 @@ class LogIn extends Component {
 
   async login() {
     const { name, password } = this.state;
-    if (name !== '' && password !== '') {
-      try {
-        const res = await Request.axios('post', '/api/v1/login', { name, password });
-        if (res && res.success) {
-          localStorage.setItem('userInfo', JSON.stringify(res.userInfo));
-          // 弹窗
-          this.setState({
-            modal: {
-              visible: true,
-            }
-          });
-        } else {
-          notification(res.message, 'error');
-        }
-      } catch (error) {
-        notification(error, 'error');
+    if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(name)) {
+      notification('用户名只能由汉字，数字，字母，下划线组成', 'warn');
+      return;
+    }
+    if (!/^[A-Za-z0-9]+$/.test(password)) {
+      notification('密码只能由字母数字组成', 'warn');
+      return;
+    }
+    try {
+      const res = await Request.axios('post', '/api/v1/login', { name, password });
+      if (res && res.success) {
+        localStorage.setItem('userInfo', JSON.stringify(res.userInfo));
+        // 弹窗
+        this.setState({
+          modal: {
+            visible: true,
+          }
+        });
+      } else {
+        notification(res.message, 'error');
       }
-    } else {
-      const msg = name === '' ? '请输入用户名' : '请输入密码';
-      notification(msg, 'warn');
+    } catch (error) {
+      notification(error, 'error');
     }
   }
 
@@ -66,10 +69,6 @@ class LogIn extends Component {
     this.props.history.push('/');
   };
 
-  componentDidMount() {
-    console.log('login componentDidMount');
-  }
-
   render() {
     const { visible } = this.state.modal;
     return (
@@ -84,7 +83,6 @@ class LogIn extends Component {
             {'您已登录成功'}
           </p>
         </Modal>
-        {/* <Message isShow = {this.state.message.isShow}  type = {this.state.message.type}  content = {this.state.message.content} /> */}
         <SignInSignUp setValue={this.setValue} isLogin />
       </div>
     );
